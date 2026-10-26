@@ -24,6 +24,8 @@ CREATE TABLE categories (
     name VARCHAR(100) UNIQUE
 );
 
+CREATE UNIQUE INDEX categories_name_lower_idx ON categories (LOWER(name));
+
 CREATE TABLE services (
     service_id SERIAL PRIMARY KEY,
     name VARCHAR(255),

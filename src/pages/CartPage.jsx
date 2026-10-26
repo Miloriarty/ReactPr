@@ -1,5 +1,5 @@
 import { useContext, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext.jsx";
 import { AuthContext } from "../context/AuthContext.jsx";
 import { createAppointments } from "../api/appointments";
@@ -36,6 +36,7 @@ function CartPage() {
         }
     };
 
+    if (user?.role === "admin") return <Navigate to="/" replace />;
     if (done) return <p>Order placed</p>;
     if (items.length === 0) return <p>Cart is empty</p>;
 
@@ -43,7 +44,18 @@ function CartPage() {
         <div>
             {items.map(i => (
                 <div key={i.id} style={{ display: "flex", gap: 16, alignItems: "center" }}>
-                    <span>{i.name}</span>
+                    <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        {i.image && (
+                            <img
+                                src={i.image}
+                                alt={i.name}
+                                width={24}
+                                height={24}
+                                style={{ objectFit: "cover" }}
+                            />
+                        )}
+                        {i.name}
+                    </span>
 
                     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <button

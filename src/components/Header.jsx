@@ -19,7 +19,7 @@ function Header() {
     return (
         <header style={{ display: "flex", gap: 20, alignItems: "center", padding: 16 }}>
             <NavLink to="/" style={linkStyle} end>Catalog</NavLink>
-            <NavLink to="/cart" style={linkStyle}>Cart: {count}</NavLink>
+            {user?.role !== "admin" && <NavLink to="/cart" style={linkStyle}>Cart: {count}</NavLink>}
             {user?.role === "admin" && <NavLink to="/admin" style={linkStyle}>Admin</NavLink>}
             {user ? (
                 <>

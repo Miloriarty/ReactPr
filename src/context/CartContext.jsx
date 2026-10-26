@@ -1,8 +1,9 @@
-import { createContext, useEffect, useReducer } from "react";
+import { createContext, useContext, useEffect, useReducer } from "react";
+import { AuthContext } from "./AuthContext.jsx";
 
 export const CartContext = createContext(null);
 
-const STORAGE_KEY = "cart";
+const storageKey = (user) => `cart:${user ? user.user_id : "guest"}`;
 
 function CartReducer(items, action) {
     switch (action.type) {
@@ -33,9 +34,9 @@ function CartReducer(items, action) {
     }
 }
 
-function loadCart() {
+function loadCart(key) {
     try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = localStorage.getItem(key);
         const parsed = raw ? JSON.parse(raw) : [];
         return Array.isArray(parsed) ? parsed : [];
     } catch {
@@ -43,15 +44,31 @@ function loadCart() {
     }
 }
 
+function CartStateReducer(state, action) {
+    if (action.type === "load") {
+        return { key: action.key, items: loadCart(action.key) };
+    }
+    return { ...state, items: CartReducer(state.items, action) };
+}
+
 export function CartProvider({children}) {
-    const [items, dispatch] = useReducer(CartReducer, [], loadCart);
+    const { user } = useContext(AuthContext);
+    const key = storageKey(user);
+    const [state, dispatch] = useReducer(
+        CartStateReducer, key, k => ({ key: k, items: loadCart(k) })
+    );
+    const { items } = state;
+
+    useEffect(() => {
+        if (state.key !== key) dispatch({ type: "load", key });
+    }, [key, state.key]);
 
     useEffect(() => {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+            localStorage.setItem(state.key, JSON.stringify(items));
         } catch {
         }
-    }, [items]);
+    }, [state.key, items]);
 
     const total = items.reduce((sum, item) => sum + item.price * item.qty, 0);
 

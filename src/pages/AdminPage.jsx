@@ -59,6 +59,14 @@ function AdminPage() {
             s.service_id in discounts && discounts[s.service_id] !== s.discount_percent
         );
         if (!changed.length) return setMessage("Nothing to save");
+        const invalid = changed.find(s => {
+            const d = discounts[s.service_id];
+            return !Number.isInteger(d) || (d !== 0 && (d < 10 || d > 90));
+        });
+        if (invalid) {
+            setMessage(null);
+            return setError(`Discount for "${invalid.name}" must be from 10 to 90% (or 0 to remove it)`);
+        }
         run(
             () => Promise.all(
                 changed.map(s => setServiceDiscount(s.service_id, discounts[s.service_id], userId))
@@ -80,10 +88,15 @@ function AdminPage() {
                 <h2>Categories</h2>
                 <form onSubmit={e => {
                     e.preventDefault();
-                    if (!newCategory.trim()) return setError("Enter category name");
+                    const name = newCategory.trim();
+                    if (!name) return setError("Enter category name");
+                    if (categories.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+                        setMessage(null);
+                        return setError(`Category "${name}" already exists`);
+                    }
                     run(() =>
-                        createCategory(newCategory, userId), "Category added")
-                        .then(() => setNewCategory(""));
+                        createCategory(name, userId), "Category added")
+                        .then(ok => ok && setNewCategory(""));
                 }}>
                     <input
                         placeholder="New category"
@@ -105,7 +118,7 @@ function AdminPage() {
                         <input
                             type="number"
                             min="0"
-                            max="100"
+                            max="90"
                             value={discounts[s.service_id] ?? s.discount_percent}
                             onChange={e =>
                                 setDiscounts(d => ({ ...d, [s.service_id]: Number(e.target.value) }))

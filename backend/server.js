@@ -149,6 +149,10 @@ app.post('/api/categories', auth, adminOnly, async (req, res) => {
         return res.status(400).json({ error: 'Category name is required' });
     }
     try {
+        const existing = await pool.query('SELECT 1 FROM categories WHERE LOWER(name) = LOWER($1)', [name]);
+        if (existing.rows.length) {
+            return res.status(409).json({ error: 'Category already exists' });
+        }
         const result = await pool.query('INSERT INTO categories (name) VALUES ($1) RETURNING *', [name]);
         res.status(201).json(result.rows[0]);
     } catch (error) {
@@ -187,8 +191,8 @@ app.get('/api/services', async (req, res) => {
 
 app.put('/api/services/:id/discount', auth, adminOnly, async (req, res) => {
     const percent = Number(req.body.discount_percent);
-    if (!Number.isInteger(percent) || percent < 0 || percent > 100) {
-        return res.status(400).json({ error: 'Discount must be an integer from 0 to 100' });
+    if (!Number.isInteger(percent) || (percent !== 0 && (percent < 10 || percent > 90))) {
+        return res.status(400).json({ error: 'Discount must be an integer from 10 to 90 (or 0 to remove it)' });
     }
     try {
         const result = await pool.query(
@@ -262,6 +266,9 @@ app.post('/api/appointments', auth, async (
     req,
     res
 ) => {
+    if (req.user.role === 'admin') {
+        return res.status(403).json({ error: 'Admins cannot place orders' });
+    }
     const items = Array.isArray(req.body.items) ? req.body.items : [];
     if (!items.length) {
         return res.status(400).json({ error: 'Cart is empty' });

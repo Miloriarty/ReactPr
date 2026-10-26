@@ -2,9 +2,12 @@ import {useContext} from "react";
 import { useNavigate } from "react-router-dom";
 import "../index.css";
 import {CartContext} from "../context/CartContext.jsx";
+import {AuthContext} from "../context/AuthContext.jsx";
 
 function ProductCard({id, name, description, duration, price, finalPrice, discount, image}) {
     const {items, dispatch} = useContext(CartContext);
+    const {user} = useContext(AuthContext);
+    const isAdmin = user?.role === "admin";
     const navigate = useNavigate();
     const inCart = items.find(i => i.id === id)?.qty ?? 0;
     const product = { id, name, price: finalPrice, image };
@@ -20,11 +23,14 @@ function ProductCard({id, name, description, duration, price, finalPrice, discou
                 <p className="product-card-price">
                     Price: {discount > 0 && <s>{price}</s>} {finalPrice}
                 </p>
-                <span>In cart: {inCart}</span>
+                {!isAdmin && (
+                    <>
+                        <span>In cart: {inCart}</span>
+                        <button className="btn-add" onClick={() => dispatch({ type: "add", product })}>Add to cart</button>
+                    </>
+                )}
 
-                <button className="btn-add" onClick={() => dispatch({ type: "add", product })}>Add to cart</button>
-
-                {inCart > 0 && (
+                {!isAdmin && inCart > 0 && (
                     <>
                         <button className="btn-remove"
                                 onClick={() => dispatch({ type: "decrease", id: product.id })}
