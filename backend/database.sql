@@ -13,7 +13,7 @@ CREATE TABLE coupons (
 
 CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
-    email VARCHAR(255),
+    email VARCHAR(255) UNIQUE,
     password VARCHAR(255),
     role_id INT REFERENCES roles(role_id),
     coupon_id INT REFERENCES coupons(coupon_id)

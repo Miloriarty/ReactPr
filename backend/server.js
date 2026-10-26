@@ -79,7 +79,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
     try {
         const result = await pool.query(
-            'SELECT user_id FROM users WHERE email = $1 AND password = $2',
+            'SELECT user_id FROM users WHERE LOWER(email) = LOWER($1) AND password = $2',
             [email, password]
         );
         if (!result.rows.length) {
@@ -89,6 +89,36 @@ app.post('/api/auth/login', async (req, res) => {
         res.json(user);
     } catch (error) {
         console.error('Login error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/auth/register', async (req, res) => {
+    const email = req.body.email?.trim().toLowerCase();
+    const { password } = req.body;
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Enter email and password' });
+    }
+    if (password.length < 4) {
+        return res.status(400).json({ error: 'Password must be at least 4 characters' });
+    }
+    try {
+        const existing = await pool.query('SELECT 1 FROM users WHERE LOWER(email) = $1', [email]);
+        if (existing.rows.length) {
+            return res.status(409).json({ error: 'User with this email already exists' });
+        }
+        const result = await pool.query(`
+            INSERT INTO users (email, password, role_id)
+            VALUES ($1, $2, (SELECT role_id FROM roles WHERE name = 'user'))
+            RETURNING user_id
+        `, [email, password]);
+        const user = await findUser(result.rows[0].user_id);
+        res.status(201).json(user);
+    } catch (error) {
+        if (error.code === '23505') {
+            return res.status(409).json({ error: 'User with this email already exists' });
+        }
+        console.error('Register error:', error);
         res.status(500).json({ error: error.message });
     }
 });
