@@ -163,6 +163,23 @@ app.post('/api/categories', auth, adminOnly, async (req, res) => {
     }
 });
 
+app.delete('/api/categories/:id', auth, adminOnly, async (req, res) => {
+    try {
+        const used = await pool.query('SELECT 1 FROM services WHERE category_id = $1 LIMIT 1', [req.params.id]);
+        if (used.rows.length) {
+            return res.status(409).json({ error: 'Category has products and cannot be deleted' });
+        }
+        const result = await pool.query('DELETE FROM categories WHERE category_id = $1 RETURNING *', [req.params.id]);
+        if (!result.rows.length) return res.status(404).json({ error: 'Category not found' });
+        res.json(result.rows[0]);
+    } catch (error) {
+        if (error.code === '23503') {
+            return res.status(409).json({ error: 'Category has products and cannot be deleted' });
+        }
+        res.status(500).json({ error: error.message });
+    }
+});
+
 
 app.get('/api/services', async (req, res) => {
     try {

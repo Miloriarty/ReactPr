@@ -215,6 +215,12 @@ body {
   cursor: pointer;
 }
 
+.btn-small {
+  padding: 4px 10px;
+  font-size: 0.8em;
+  border-radius: 12px;
+}
+
 .catalog-layout {
   display: flex;
   gap: 24px;

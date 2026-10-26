@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext.jsx";
-import { getCategories, createCategory } from "../api/categories";
+import { getCategories, createCategory, deleteCategory } from "../api/categories";
 import { getServices, setServiceDiscount } from "../api/services";
 import { getUsers, getCoupons, setUserCoupon } from "../api/users";
 
@@ -107,7 +107,21 @@ function AdminPage() {
                     />
                     <button className="btn-add" type="submit">Add</button>
                 </form>
-                <p>{categories.map(c => c.name).join(", ")}</p>
+                {categories.map(c => (
+                    <div key={c.category_id} className="admin-row">
+                        <span>{c.name}</span>
+                        <button
+                            className="btn-remove btn-small"
+                            onClick={() => {
+                                if (!window.confirm(`Delete category "${c.name}"?`)) return;
+                                run(() =>
+                                    deleteCategory(c.category_id, userId), `Category "${c.name}" deleted`);
+                            }}
+                        >
+                            Delete
+                        </button>
+                    </div>
+                ))}
             </section>
 
             <section>
